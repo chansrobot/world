@@ -750,7 +750,7 @@ function vHome(){
  const mBtn=([a,v])=>`data-a="${a}" ${v?`data-v="${v}"`:''}`;
  return `<div class="view">
  <section class="band home-band" aria-labelledby="h-home">
-  <h1 id="h-home" class="band-t">어디로 교환 가볼까요?</h1><p class="band-p">${esc(pr.name)}님 조건에 맞춰 골라 드려요</p>
+  <h1 id="h-home" class="band-t">어디로 가볼까요?</h1><p class="band-p">${esc(pr.name)}님 조건에 맞춰 골라 드려요</p>
   <form class="search home-search" data-form="hsearch" role="search">${I.search}<label class="sr" for="hq">학교, 나라, 도시 검색</label><input id="hq" type="search" placeholder="학교, 나라, 도시로 검색" enterkeyhint="search" autocomplete="off"><button class="btn btn-ink" type="submit">검색</button></form>
  </section>
  <section class="blk" style="border-top:0;padding:26px 18px 6px" aria-labelledby="h-rec"><div class="blk-h"><h2 id="h-rec">추천 교환 프로그램</h2><button class="link" data-a="results">추천 이유</button></div>
