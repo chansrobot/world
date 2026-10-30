@@ -393,9 +393,9 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;bac
 @keyframes tIn{from{opacity:0;transform:translate(-50%,16px)}}
 
 /* ---------- loader: plane only ---------- */
-#loader{position:absolute;inset:0;z-index:400;background:linear-gradient(180deg,#A9D8FF 0%,#7CC2FF 55%,#6BB6FA 100%);overflow:hidden;opacity:0;visibility:hidden;transition:opacity .45s ease,visibility 0s linear .45s}
-#loader canvas{transition:transform .5s cubic-bezier(.2,.8,.2,1)}
-#loader.leave canvas{transform:translateY(-14px) scale(1.04)}
+#loader{position:absolute;inset:0;z-index:400;background:linear-gradient(180deg,#A9D8FF 0%,#7CC2FF 55%,#6BB6FA 100%);overflow:hidden;opacity:0;visibility:hidden;transition:opacity .6s ease,visibility 0s linear .6s}
+#loader canvas{transition:transform .6s cubic-bezier(.2,.8,.2,1)}
+#loader.leave canvas{transform:translateY(-12px)}
 #loader.on{opacity:1;visibility:visible;transition:opacity .25s ease}
 #loader canvas{position:absolute;inset:0;width:100%;height:100%}
 
@@ -752,7 +752,7 @@ function vHome(){
  const mBtn=([a,v])=>`data-a="${a}" ${v?`data-v="${v}"`:''}`;
  return `<div class="view">
  <section class="band home-band" aria-labelledby="h-home">
-  <h1 id="h-home" class="band-t">어디로 가볼까요?</h1><p class="band-p">${esc(pr.name)}님 조건에 맞춰 골라 드려요</p>
+  <h1 id="h-home" class="band-t">어디로 교환 가볼까요?</h1><p class="band-p">${esc(pr.name)}님 조건에 맞춰 골라 드려요</p>
   <form class="search home-search" data-form="hsearch" role="search">${I.search}<label class="sr" for="hq">학교, 나라, 도시 검색</label><input id="hq" type="search" placeholder="학교, 나라, 도시로 검색" enterkeyhint="search" autocomplete="off"><button class="btn btn-ink" type="submit">검색</button></form>
  </section>
  <section class="blk" style="border-top:0;padding:26px 18px 6px" aria-labelledby="h-rec"><div class="blk-h"><h2 id="h-rec">추천 교환 프로그램</h2><button class="link" data-a="results">추천 이유</button></div>
@@ -1387,7 +1387,7 @@ function fly(cb){
  const W=L.clientWidth,H=L.clientHeight,dpr=Math.min(2,devicePixelRatio||1);
  cv.width=W*dpr;cv.height=H*dpr;const c=cv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);
  const INK='#0B1F44';
- const D=2000,T_OUT=2350,base=Math.min(W,520)/390;
+ const D=2000,T_OUT=3600,base=Math.min(W,520)/390;
  const ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
  // 완만한 곡선 경로 (왼쪽 아래 → 오른쪽 위)
  const P0=[-W*.25,H*.82],P1=[W*.35,H*.62],P2=[W*.7,H*.36],P3=[W*1.25,H*.12];
@@ -1406,7 +1406,7 @@ function fly(cb){
   o.font=`700 ${Math.round(FS*.17)}px "Gothic A1",sans-serif`;if('letterSpacing' in o)o.letterSpacing='4px';o.fillStyle='rgba(11,31,68,.55)';o.fillText('by WAYLiB',W/2,TY+FS*.78)}
  const msk=document.createElement('canvas');msk.width=cv.width;msk.height=cv.height;const mk=msk.getContext('2d');
  const reveal=()=>{const f=pending;pending=null;f&&f()};
- const finish=()=>{if(ended)return;ended=true;reveal();L.classList.add('leave');L.classList.remove('on');setTimeout(()=>{L.classList.remove('leave');flying=false;c.clearRect(0,0,W,H)},520)};
+ const finish=()=>{if(ended)return;ended=true;reveal();L.classList.add('leave');L.classList.remove('on');setTimeout(()=>{L.classList.remove('leave');flying=false;c.clearRect(0,0,W,H)},700)};
  L.onclick=finish;
  function frame(now){
   if(ended)return;
@@ -1426,19 +1426,20 @@ function fly(cb){
   // 글자: 비행기가 지나간 만큼 왼쪽부터 드러남 (부드러운 가장자리)
   if(FAM){
    if(!tx)prepText();
-   const rx=t<1?px:W*2,edge=46*base;
-   if(rx>tx[0]-edge){
+   const rx=t<1?px:W*2,edge=22*base;
+   if(rx>=tx[1]+edge){c.save();c.setTransform(1,0,0,1,0,0);c.drawImage(off,0,0);c.restore()}
+   else if(rx>tx[0]-edge){
     mk.setTransform(1,0,0,1,0,0);mk.clearRect(0,0,msk.width,msk.height);mk.drawImage(off,0,0);
     mk.setTransform(dpr,0,0,dpr,0,0);mk.globalCompositeOperation='destination-in';
     const g=mk.createLinearGradient(rx-edge,0,rx,0);g.addColorStop(0,'#000');g.addColorStop(1,'rgba(0,0,0,0)');mk.fillStyle=g;mk.fillRect(0,0,W,H);mk.globalCompositeOperation='source-over';
     const lift=Math.max(0,1-(rx-tx[0])/(tx[1]-tx[0]+edge))*6;
-    c.save();c.setTransform(1,0,0,1,0,lift*dpr);c.drawImage(msk,0,0);c.restore();
+    c.save();c.setTransform(1,0,0,1,0,Math.round(lift*dpr));c.drawImage(msk,0,0);c.restore();
    }
   }
   // 비행기 (살짝 그림자)
   if(t<1){const sc=base*1.15*(.8+.35*k);c.save();c.translate(px,py);c.rotate(ang);c.scale(sc,sc);
    c.shadowColor='rgba(11,31,68,.25)';c.shadowBlur=10;c.shadowOffsetY=6;c.fillStyle=INK;c.fill(JET);c.restore()}
-  if(e>=T_OUT-250&&pending)reveal();
+  if(e>=T_OUT-300&&pending)reveal();
   if(e>=T_OUT){finish();return}
   requestAnimationFrame(frame);
  }
