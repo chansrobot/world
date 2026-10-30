@@ -505,6 +505,10 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;bac
 .lg-table th,.lg-table td{padding:8px 10px;border:1px solid var(--line);text-align:left;vertical-align:top}
 .lg-table th{background:var(--s1);color:var(--ink);font-weight:700}
 
+/* ---------- swipe back ---------- */
+.swipe-shade{position:absolute;inset:0;z-index:49;background:rgba(11,31,68,.18);pointer-events:none}
+.page{will-change:transform}
+
 /* ---------- breakpoints ---------- */
 @media (max-width:359px){
   body{font-size:13.5px}
@@ -1235,13 +1239,23 @@ function cmpBar(){
  $('#app').appendChild(b);
 }
 let pageId=null;
+/* 뒤로가기: 상세 화면을 열면 브라우저 기록을 한 칸 쌓아서
+   아이폰 사파리의 왼쪽 끝 쓸기, 안드로이드 뒤로 버튼이 앱을 나가지 않고 화면만 닫게 함 */
+let histPushed=false,ignorePop=false,popClosing=false;
+addEventListener('popstate',()=>{
+ if(ignorePop){ignorePop=false;return}
+ histPushed=false;closeSheet();
+ if($('#layer .page')){popClosing=true;closePage();popClosing=false}
+});
 function openPage(html,id){
+ if(!histPushed){try{history.pushState({layer:1},'');histPushed=true}catch(e){}}
  $('#layer').innerHTML='';pageId=id;
  const p=document.createElement('div');p.className='page'+(id&&/^(detail|uni):/.test(id)?' amber':'');p.setAttribute('role','dialog');p.setAttribute('aria-modal','true');p.innerHTML=html;$('#layer').appendChild(p);
  runFlaps(p);mountGlobes(p);cmpBar();
 }
 function closePage(instant){
  const p=$('#layer .page');pageId=null;if(!p)return;
+ if(histPushed&&!popClosing){histPushed=false;ignorePop=true;history.back()}
  if(instant){p.remove();cmpBar();return}
  p.classList.add('out');setTimeout(()=>{p.remove();cmpBar()},200);
 }
@@ -1304,6 +1318,42 @@ const A={
  results(){openPage(resultsPage(),'results')}
 };
 function rediag(top){const p=$('#layer .page');if(!p)return;const y=p.querySelector('.body').scrollTop;p.innerHTML=diagPage();p.style.animation='none';const b=p.querySelector('.body');b.scrollTop=top?0:y;if(top)b.firstElementChild.animate([{opacity:0,transform:'translateX(20px)'},{opacity:1,transform:'none'}],{duration:320,easing:'cubic-bezier(.2,.8,.2,1)'})}
+
+/* 왼쪽 끝에서 오른쪽으로 쓸어서 닫기 (홈 화면에 추가한 앱, 안드로이드에서도 동작) */
+let sw=null;
+document.addEventListener('touchstart',e=>{
+ const p=$('#layer .page');if(!p||e.touches.length>1||$('.sheet-bg'))return;
+ const t=e.touches[0],left=$('#app').getBoundingClientRect().left;
+ if(t.clientX-left>28)return;
+ sw={p,x0:t.clientX,y0:t.clientY,t0:performance.now(),dx:0,on:false,shade:null};
+},{passive:true});
+document.addEventListener('touchmove',e=>{
+ if(!sw)return;if(!sw.p.isConnected){sw=null;return}
+ const t=e.touches[0],dx=t.clientX-sw.x0,dy=t.clientY-sw.y0;
+ if(!sw.on){
+  if(Math.abs(dy)>10&&Math.abs(dy)>Math.abs(dx)){sw=null;return}
+  if(dx<8)return;
+  sw.on=true;const p=sw.p;p.style.animation='none';p.style.transition='none';p.style.boxShadow='-10px 0 28px rgba(11,31,68,.22)';
+  sw.shade=document.createElement('div');sw.shade.className='swipe-shade';$('#layer').insertBefore(sw.shade,p);
+ }
+ e.preventDefault();
+ const w=sw.p.offsetWidth;sw.dx=Math.max(0,dx);
+ sw.p.style.transform=`translateX(${sw.dx}px)`;sw.shade.style.opacity=String(1-sw.dx/w);
+},{passive:false});
+function swipeEnd(){
+ if(!sw)return;const s=sw;sw=null;if(!s.on)return;
+ const p=s.p,w=p.offsetWidth,v=s.dx/Math.max(1,performance.now()-s.t0);
+ const done=s.dx>w*.33||v>.6;
+ p.style.transition='transform .22s cubic-bezier(.2,.8,.2,1)';if(s.shade)s.shade.style.transition='opacity .22s';
+ if(done){
+  p.style.transform=`translateX(${w}px)`;if(s.shade)s.shade.style.opacity='0';
+  setTimeout(()=>{if(s.shade)s.shade.remove();if(p.isConnected)closePage(true)},220);
+ }else{
+  p.style.transform='';if(s.shade)s.shade.style.opacity='1';
+  setTimeout(()=>{if(s.shade)s.shade.remove();p.style.boxShadow='';p.style.transition=''},220);
+ }
+}
+document.addEventListener('touchend',swipeEnd);document.addEventListener('touchcancel',swipeEnd);
 
 document.addEventListener('click',e=>{const el=e.target.closest('[data-a]');if(!el||el.disabled)return;const fn=A[el.dataset.a];if(fn)fn(el.dataset.v,el,e)});
 document.addEventListener('submit',e=>{const f=e.target;if(f.dataset.form!=='hsearch')return;e.preventDefault();state.filter.q=$('#hq').value.trim();state.tab='explore';save();render();$('#screen').scrollTop=0});
